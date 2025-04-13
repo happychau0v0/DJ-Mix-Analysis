@@ -118,32 +118,52 @@ def download_audio(search_query, output_path, filename, mix_id):
         print(f"Error downloading '{search_query}': {e}", file=sys.stderr)
         return False
 
-def main():
-    parser = argparse.ArgumentParser(description='Download audio for a mix using yt-dlp based on mix_id')
-    parser.add_argument('mix_id', help='Mix ID to download audio for')
-    args = parser.parse_args()
+def run_downloader(mix_id, mixes_csv_path='../data/mixes.csv', meta_dir='../data/meta', mp3_base_dir='../data/mp3'):
+    """
+    Runs the full download process for a given mix ID.
 
-    mix_id = str(args.mix_id)  # Ensure mix_id is a string
+    Args:
+        mix_id (str): The ID of the mix to download audio for.
+        mixes_csv_path (str, optional): Path to the mixes database CSV. Defaults to '../data/mixes.csv'.
+        meta_dir (str, optional): Directory containing metadata CSVs. Defaults to '../data/meta'.
+        mp3_base_dir (str, optional): Base directory to save MP3 files. Defaults to '../data/mp3'.
+
+    Returns:
+        str: The path to the directory containing downloaded MP3s (e.g., '../data/mp3/[mix_id]')
+             or None if a critical error occurs (e.g., mix_id not found).
+    """
+    mix_id = str(mix_id)  # Ensure mix_id is a string
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Paths
-    mixes_csv = os.path.join(script_dir, '..', 'data', 'mixes.csv')
-    tracklist_csv = os.path.join(script_dir, '..', 'data', 'meta', f"{mix_id}.csv")
-    output_dir = os.path.join(script_dir, '..', 'data', 'mp3', mix_id)
+    # Construct full paths relative to the script location
+    full_mixes_csv_path = os.path.join(script_dir, mixes_csv_path)
+    full_tracklist_csv_path = os.path.join(script_dir, meta_dir, f"{mix_id}.csv")
+    full_output_dir = os.path.join(script_dir, mp3_base_dir, mix_id)
 
     # Validate mix_id and get mix title
-    mix_title = validate_mix_id(mix_id, mixes_csv)
-    
+    try:
+        mix_title = validate_mix_id(mix_id, full_mixes_csv_path)
+    except SystemExit: # Catch SystemExit from validate_mix_id on error
+        return None
+
     # Download original mix as mix.mp3
-    print(f"Searching for original mix: {mix_title}")
-    if not download_audio(mix_title, output_dir, "mix", mix_id):
+    print(f"--- Downloading Mix: {mix_title} ---")
+    mix_downloaded = download_audio(mix_title, full_output_dir, "mix", mix_id)
+    if not mix_downloaded:
         print(f"Warning: Failed to download original mix '{mix_title}'", file=sys.stderr)
+        # Continue to download tracks even if mix download fails, but maybe return None later?
+        # For now, let's proceed but the user should be aware.
     else:
-        print(f"Successfully downloaded original mix as ../data/mp3/{mix_id}/mix.mp3")
+        print(f"Successfully processed original mix (downloaded or existed).")
 
     # Validate and download tracks
-    tracklist_df = validate_tracklist(mix_id, tracklist_csv)
-    if tracklist_df is not None:
+    print(f"--- Downloading Tracks for Mix ID: {mix_id} ---")
+    tracklist_df = validate_tracklist(mix_id, full_tracklist_csv_path)
+    if tracklist_df is None:
+        print(f"Warning: Could not read or validate tracklist at {full_tracklist_csv_path}. Skipping track downloads.", file=sys.stderr)
+    else:
+        tracks_downloaded_count = 0
+        tracks_failed_count = 0
         for _, track in tracklist_df.iterrows():
             artist = str(track['artist'])  # Ensure string
             title = str(track['title'])   # Ensure string
@@ -151,19 +171,33 @@ def main():
                 i_track = int(track['i_track'])  # Convert to int safely
             except (ValueError, TypeError) as e:
                 print(f"Warning: Invalid i_track value for track {artist} - {title}: {e}. Skipping.", file=sys.stderr)
+                tracks_failed_count += 1
                 continue
-            
+
             # Skip unidentified tracks
             if 'ID' == title.upper() or 'ID' == artist.upper():
-                print(f"Warning: Skipping unidentified track: {artist} - {title}", file=sys.stderr)
+                print(f"Info: Skipping unidentified track: {artist} - {title}", file=sys.stderr)
                 continue
 
             search_query = f"{artist} {title}"
-            print(f"Searching for track: {search_query}")
-            if not download_audio(search_query, output_dir, str(i_track), mix_id):
+            print(f"Processing track {i_track}: {search_query}")
+            if not download_audio(search_query, full_output_dir, str(i_track), mix_id):
                 print(f"Warning: Failed to download track '{search_query}'", file=sys.stderr)
+                tracks_failed_count += 1
             else:
-                print(f"Successfully downloaded track as ../data/mp3/{mix_id}/{i_track}.mp3")
+                print(f"Successfully processed track {i_track}.")
+                tracks_downloaded_count += 1
+        print(f"--- Track Download Summary: {tracks_downloaded_count} processed, {tracks_failed_count} failed/skipped ---")
 
-if __name__ == "__main__":
-    main()
+    # Return the output directory path even if some downloads failed,
+    # as subsequent steps might still work with partial data.
+    return full_output_dir
+
+# Example usage (if run directly, though intended as module):
+# if __name__ == "__main__":
+#     test_mix_id = '6qdzkf9' # Replace with a valid mix ID
+#     download_dir = run_downloader(test_mix_id)
+#     if download_dir:
+#         print(f"Download process finished. Files are in: {download_dir}")
+#     else:
+#         print(f"Download process failed for mix ID: {test_mix_id}")

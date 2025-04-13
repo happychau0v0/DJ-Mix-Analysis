@@ -277,12 +277,21 @@ def process_mix(mix_id, features=['chroma', 'mfcc'], key_invariant=True):
     wav_dir = os.path.join(script_dir, '..', 'data', 'wav', mix_id)
     meta_path = os.path.join(script_dir, '..', 'data', 'meta', f"{mix_id}.csv")
     results_dir = os.path.join(script_dir, '..', 'data', 'align')
-    viz_dir = os.path.join(script_dir, '..', 'data', 'dtwviz')
     
     # Create directories
     os.makedirs(wav_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
     
+    # Check if results already exist
+    feature_id = '+'.join(features)
+    result_path = os.path.join(results_dir, f"{mix_id}-{feature_id}")
+    if key_invariant:
+        result_path += '-keyinv'
+    result_path += '.pkl'
+    if os.path.exists(result_path):
+        print(f"Results already exist: {result_path}")
+        return result_path
+
     # Read tracklist
     try:
         tracklist = pd.read_csv(meta_path)
@@ -324,17 +333,6 @@ def process_mix(mix_id, features=['chroma', 'mfcc'], key_invariant=True):
     mix_beats = beats(mix_wav_path)
     mix_feature = extract_features(mix_wav_path, features)
     
-    # Check if results already exist
-    feature_id = '+'.join(features)
-    result_path = os.path.join(results_dir, f"{mix_id}-{feature_id}")
-    if key_invariant:
-        result_path += '-keyinv'
-    result_path += '.pkl'
-    if os.path.exists(result_path):
-        print(f"Results already exist: {result_path}")
-        results_df = pd.read_pickle(result_path)
-        return results_df
-    
     # Parallel alignment using multiple cores
     num_cores = mp.cpu_count()  # Use all available cores
     with mp.Pool(processes=num_cores) as pool:
@@ -346,17 +344,19 @@ def process_mix(mix_id, features=['chroma', 'mfcc'], key_invariant=True):
     results_df.to_pickle(result_path)
     print(f"Saved alignment results to {result_path}")
     
-    return results_df
+    # Return the path to the results file
+    return result_path
 
-def main():
-    parser = argparse.ArgumentParser(description='Align tracks to mix using DTW')
-    parser.add_argument('mix_id', help='ID of the mix to process')
-    parser.add_argument('--features', default='chroma,mfcc', help='Feature types to use (comma-separated)')
-    parser.add_argument('--key-invariant', action='store_true', help='Use key-invariant matching')
-    args = parser.parse_args()
-    
-    features = args.features.split(',')
-    process_mix(args.mix_id, features=features, key_invariant=args.key_invariant)
-
-if __name__ == "__main__":
-    main()
+# Example usage (if run directly, though intended as module):
+# if __name__ == "__main__":
+#     test_mix_id = '6qdzkf9' # Replace with a valid mix ID
+#     features_to_use = ['chroma', 'mfcc']
+#     key_inv = True
+#     pkl_file = process_mix(test_mix_id, features=features_to_use, key_invariant=key_inv)
+#     if pkl_file and os.path.exists(pkl_file):
+#         print(f"Alignment process finished. Results saved to: {pkl_file}")
+#         # Optionally load and inspect results
+#         # results = pd.read_pickle(pkl_file)
+#         # print(results.head())
+#     else:
+#         print(f"Alignment process failed or results file not found for mix ID: {test_mix_id}")

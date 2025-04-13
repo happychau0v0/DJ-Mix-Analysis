@@ -144,33 +144,49 @@ def update_mixes_database(mix_title, mixId, database_path):
     except Exception as e:
         print(f"Error updating mixes database: {e}", file=sys.stderr)
 
-def main():
-    parser = argparse.ArgumentParser(description='Parse tracklist from a saved 1001tracklists.com HTML file')
-    parser.add_argument('file', help='Name of the saved HTML file of the 1001tracklists.com tracklist page at ../tracklists/')
-    parser.add_argument('-o', '--output', help='Output CSV file path')
-    args = parser.parse_args()
-    
-    # Parse tracklist
+def run_scraper(html_file_base, output_csv_path=None, mixes_db_path='../data/mixes.csv'):
+    """
+    Runs the full scraping process for a given HTML file base name.
+
+    Args:
+        html_file_base (str): The base name of the HTML file (without .html) in ../tracklists/.
+        output_csv_path (str, optional): Specific path to save the output CSV. Defaults to None.
+        mixes_db_path (str, optional): Path to the mixes database CSV. Defaults to '../data/mixes.csv'.
+
+    Returns:
+        tuple: (mix_id, output_csv_full_path) or (None, None) if scraping fails.
+    """
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    tracks, mix_title, mixId = scrape_tracklist(os.path.join(script_dir, '..', 'tracklists', args.file + '.html'))  # Modified to receive mixId
-    
-    if not tracks:
-        print("No tracks found. Exiting.", file=sys.stderr)
-        sys.exit(1)
-    
+    html_full_path = os.path.join(script_dir, '..', 'tracklists', html_file_base + '.html')
+
+    # Parse tracklist
+    try:
+        tracks, mix_title, mixId = scrape_tracklist(html_full_path)
+    except Exception as e:
+        print(f"Error during scraping: {e}", file=sys.stderr)
+        return None, None
+
+    if not tracks or mixId is None:
+        print(f"No tracks found or mixId missing for {html_file_base}. Exiting.", file=sys.stderr)
+        return None, None
+
     # Determine output filename
-    if not args.output:
-        output_file = f"{mixId}.csv"  # Modified to use mixId
+    if output_csv_path:
+        output_csv_full_path = output_csv_path
     else:
-        output_file = args.output
-    
+        output_filename = f"{mixId}.csv"
+        output_csv_full_path = os.path.join(script_dir, '..', 'data', 'meta', output_filename)
+
     # Save tracklist
-    output_dir = os.path.join(script_dir, '..', 'data', 'meta', output_file)
-    save_to_csv(tracks, output_dir)
-    
+    save_to_csv(tracks, output_csv_full_path)
+
     # Update mixes database
-    mixes_db_path = '../data/mixes.csv'
     update_mixes_database(mix_title, mixId, mixes_db_path)
 
-if __name__ == "__main__":
-    main()
+    return mixId, output_csv_full_path
+
+# Example usage (if run directly, though intended as module):
+# if __name__ == "__main__":
+#     test_mix_id, test_csv_path = run_scraper('avicii') # Replace 'avicii' with a valid file base name
+#     if test_mix_id:
+#         print(f"Scraping complete. Mix ID: {test_mix_id}, CSV Path: {test_csv_path}")

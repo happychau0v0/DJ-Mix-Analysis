@@ -203,31 +203,55 @@ def visualize_alignment(mix_id, pkl_path, viz_dir):
     plt.savefig(viz_path)
     print(f"Saved visualization to {viz_path}")
     plt.close()
+    return viz_path # Return the path to the saved PDF
 
-def main():
-    parser = argparse.ArgumentParser(description='Visualize DTW alignment paths from a .pkl file with ground truth')
-    parser.add_argument('mix_id', help='ID of the mix to visualize (e.g., 6qdzkf9)')
-    parser.add_argument('--pkl-path', default=None, help='Path to the alignment .pkl file (default: ../data/align/[mix_id]-chroma+mfcc-keyinv.pkl)')
-    parser.add_argument('--viz-dir', default='../data/dtwviz', help='Directory to save the visualization (default: ../data/dtwviz)')
-    args = parser.parse_args()
+def run_visualizer(mix_id, pkl_path, viz_base_dir='../data/dtwviz'):
+    """
+    Runs the visualization process for a given mix ID and alignment results.
 
-    # Construct default .pkl path if not provided
-    if args.pkl_path is None:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        pkl_path = os.path.join(script_dir, '..', 'data', 'align', f"{args.mix_id}-chroma+mfcc.pkl")
-    else:
-        pkl_path = args.pkl_path
+    Args:
+        mix_id (str): The ID of the mix.
+        pkl_path (str): Path to the alignment .pkl file.
+        viz_base_dir (str, optional): Base directory to save visualizations. Defaults to '../data/dtwviz'.
+
+    Returns:
+        str: The path to the generated PDF visualization, or None if an error occurs.
+    """
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    full_viz_dir = os.path.join(script_dir, viz_base_dir)
 
     # Check if the .pkl file exists
     if not os.path.exists(pkl_path):
-        print(f"Alignment .pkl file not found at {pkl_path}")
-        return
+        print(f"Alignment .pkl file not found at {pkl_path}", file=sys.stderr)
+        return None
 
     # Ensure viz_dir exists
-    os.makedirs(args.viz_dir, exist_ok=True)
-    
-    # Visualize the alignment
-    visualize_alignment(args.mix_id, pkl_path, args.viz_dir)
+    try:
+        os.makedirs(full_viz_dir, exist_ok=True)
+    except Exception as e:
+        print(f"Error creating visualization directory {full_viz_dir}: {e}", file=sys.stderr)
+        return None
 
-if __name__ == '__main__':
-    main()
+    # Visualize the alignment
+    try:
+        pdf_path = visualize_alignment(mix_id, pkl_path, full_viz_dir)
+        return pdf_path
+    except Exception as e:
+        print(f"Error during visualization for mix {mix_id}: {e}", file=sys.stderr)
+        return None
+
+# Example usage (if run directly, though intended as module):
+# if __name__ == '__main__':
+#     test_mix_id = '6qdzkf9' # Replace with a valid mix ID
+#     # Construct the expected pkl path based on default alignment settings
+#     script_dir = os.path.dirname(os.path.abspath(__file__))
+#     default_pkl_path = os.path.join(script_dir, '..', 'data', 'align', f"{test_mix_id}-chroma+mfcc-keyinv.pkl")
+    
+#     if os.path.exists(default_pkl_path):
+#         pdf_file = run_visualizer(test_mix_id, default_pkl_path)
+#         if pdf_file:
+#             print(f"Visualization complete. PDF saved to: {pdf_file}")
+#         else:
+#             print(f"Visualization failed for mix ID: {test_mix_id}")
+#     else:
+#         print(f"Could not find default PKL file to test visualization: {default_pkl_path}")
