@@ -84,6 +84,15 @@ def download_audio(search_query, output_path, filename, mix_id):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Ensure output directory exists
+            output_dir = os.path.join('../data/mp3', str(mix_id))
+            os.makedirs(output_dir, exist_ok=True)
+            output_file = os.path.join(output_dir, f"{filename}.mp3")
+            
+            if os.path.exists(output_file):
+                print(f"Info: File already exists at {output_file}. Skipping download.", file=sys.stderr)
+                return True
+            
             # Get info without downloading
             info = ydl.extract_info(f"ytsearch:{search_query}", download=False)
             if not info or 'entries' not in info or not info['entries']:
@@ -98,15 +107,6 @@ def download_audio(search_query, output_path, filename, mix_id):
             if not is_likely_match(search_query, video_title):
                 print(f"Warning: Top result '{video_title}' for '{search_query}' seems unrelated (match score too low). Skipping.", file=sys.stderr)
                 return False
-
-            # Ensure output directory exists
-            output_dir = os.path.join('../data/mp3', str(mix_id))
-            os.makedirs(output_dir, exist_ok=True)
-            output_file = os.path.join(output_dir, f"{filename}.mp3")
-            
-            if os.path.exists(output_file):
-                print(f"Info: File already exists at {output_file}. Skipping download.", file=sys.stderr)
-                return True
 
             # Download
             print(f"Downloading '{video_title}' for '{search_query}' as {filename}.mp3")
@@ -154,7 +154,7 @@ def main():
                 continue
             
             # Skip unidentified tracks
-            if 'ID' in title.upper() or 'ID' in artist.upper():
+            if 'ID' == title.upper() or 'ID' == artist.upper():
                 print(f"Warning: Skipping unidentified track: {artist} - {title}", file=sys.stderr)
                 continue
 

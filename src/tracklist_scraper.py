@@ -146,12 +146,13 @@ def update_mixes_database(mix_title, mixId, database_path):
 
 def main():
     parser = argparse.ArgumentParser(description='Parse tracklist from a saved 1001tracklists.com HTML file')
-    parser.add_argument('file', help='Path to the saved HTML file of the 1001tracklists.com tracklist page')
+    parser.add_argument('file', help='Name of the saved HTML file of the 1001tracklists.com tracklist page at ../tracklists/')
     parser.add_argument('-o', '--output', help='Output CSV file path')
     args = parser.parse_args()
     
     # Parse tracklist
-    tracks, mix_title, mixId = scrape_tracklist(args.file)  # Modified to receive mixId
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    tracks, mix_title, mixId = scrape_tracklist(os.path.join(script_dir, '..', 'tracklists', args.file + '.html'))  # Modified to receive mixId
     
     if not tracks:
         print("No tracks found. Exiting.", file=sys.stderr)
@@ -164,7 +165,6 @@ def main():
         output_file = args.output
     
     # Save tracklist
-    script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, '..', 'data', 'meta', output_file)
     save_to_csv(tracks, output_dir)
     
