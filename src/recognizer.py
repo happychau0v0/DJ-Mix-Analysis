@@ -56,14 +56,16 @@ async def detect_songs_in_mix(mix_path: str, interval_seconds: int = 30, segment
                 song_info = {
                     "mix_id": mix_id,
                     "i_track": i_track,
-                    "track_id": "",  # Unknown from Shazam
+                    "track_id": "",
                     "timestamp": "",
                     "artist": track.get("subtitle", ""),
                     "title": track.get("title", "")
                 }
-                detected_songs.append(song_info)
-                logger.info(f"Detected: {song_info['title']} by {song_info['artist']} at {song_info['timestamp']}")
-                i_track += 1
+                # Check for duplicates based on artist and title
+                if not any(song["artist"] == song_info["artist"] and song["title"] == song_info["title"] for song in detected_songs):
+                    detected_songs.append(song_info)
+                    logger.info(f"Detected: {song_info['title']} by {song_info['artist']} at {song_info['timestamp']}")
+                    i_track += 1
             else:
                 logger.info(f"No song detected at {current_time_ms/1000}s")
         except Exception as e:
@@ -72,6 +74,10 @@ async def detect_songs_in_mix(mix_path: str, interval_seconds: int = 30, segment
         if os.path.exists(temp_file):
             os.remove(temp_file)
         current_time_ms += interval_seconds * 1000
+    
+    # Reassign i_track sequentially after deduplication
+    for index, song in enumerate(detected_songs):
+        song["i_track"] = index
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_csv_path = os.path.join(script_dir, '..', 'data', 'meta', f"{mix_id}.csv")

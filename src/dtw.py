@@ -46,9 +46,6 @@ def dtw(X, Y):
     X = X.reshape((X.shape[0], -1), order="F")
     Y = Y.reshape((Y.shape[0], -1), order="F")
 
-    # Debug: Log shapes after preprocessing
-    print(f"X shape after preprocessing: {X.shape}, Y shape: {Y.shape}")
-
     C = cdist(X, Y, metric='euclidean')
     is_transposed = X.shape[0] > Y.shape[0]
     if is_transposed:

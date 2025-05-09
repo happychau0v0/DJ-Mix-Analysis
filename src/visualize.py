@@ -50,8 +50,13 @@ def visualize_alignment(mix_id, pkl_path, viz_dir):
     xmax = max(results_df['mix_cue_out_beat'].max(), results_df['mix_cue_in_beat'].max())
     ymax = max(results_df['track_cue_out_beat'].max(), results_df['track_cue_in_beat'].max())
     plt.figure(figsize=(int(xmax / ymax * 2), 4))
+    cnt = 0
 
     for i, (_, track) in enumerate(results_df.iterrows()):
+        print(i, track['mix_cue_in_time'], track['mix_cue_out_time'], track['match_rate'])
+        if track['mix_cue_out_time'] - track['mix_cue_in_time'] < 20 or track['match_rate'] < 0.25:
+            continue
+
         color = COLORS[i % len(COLORS)]
         wp = track['wp']
         plt.plot(wp[:, 1], wp[:, 0], color=color)
@@ -74,13 +79,14 @@ def visualize_alignment(mix_id, pkl_path, viz_dir):
             verticalalignment='bottom', horizontalalignment='left'
         )
         if track['match_rate'] > MATCH_RATE_THRESHOLD:
-            print(f'track {i} exceeded threashold')
+            # print(i, cnt, track['match_rate'])
             box_height = 0.04 * ymax
             plt.gca().add_patch(mpatches.Rectangle(
-                xy=(track['mix_cue_in_beat'], box_height * i), width=track['mix_cue_out_beat'] - track['mix_cue_in_beat'],
+                xy=(track['mix_cue_in_beat'], box_height * cnt), width=track['mix_cue_out_beat'] - track['mix_cue_in_beat'],
                 height=box_height, linewidth=0, facecolor=color, alpha=0.5
             ))
-        print(i, track['match_rate'])
+
+        cnt += 1
 
     mix_beats = get_mix_beats(mix_id)
     if not gt_df.empty and mix_beats is not None:

@@ -1,21 +1,19 @@
 import argparse
 import os
 import sys
-try:
-    import tracklist_scraper
-    import download
-    import align_tracks
-    import visualize
-except ImportError as e:
-    print(f"Error importing modules: {e}", file=sys.stderr)
-    print("Ensure tracklist_scraper.py, download.py, align_tracks.py, and visualize.py are present.", file=sys.stderr)
-    sys.exit(1)
+import tracklist_scraper
+import download
+import align_tracks
+import visualize
+import recognizer
+import asyncio
 
 def main():
     parser = argparse.ArgumentParser(description='Run the DJ Mix Analysis pipeline.')
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('--html', help='HTML file base name in ../tracklists/ (e.g., "avicii").')
     input_group.add_argument('--mix-id', help='Mix ID to process (skips scraping).')
+    input_group.add_argument('--mp3', help='Path to MP3 file for mix analysis.')
     parser.add_argument('--features', default='chroma,mfcc', help='Alignment features (comma-separated).')
     key_inv_group = parser.add_mutually_exclusive_group()
     key_inv_group.add_argument('--key-invariant', action='store_true', default=True, help='Use key-invariant matching.')
@@ -44,6 +42,16 @@ def main():
             print("Scraping failed. Exiting.", file=sys.stderr)
             sys.exit(1)
         print(f"Scraping successful. Mix ID: {current_mix_id}")
+    elif args.mp3:
+        print(f"\n--- Step 1: Song Detection ---")
+        if not os.path.exists(args.mp3):
+            print(f"MP3 file not found at {args.mp3}. Exiting.", file=sys.stderr)
+            sys.exit(1)
+        current_mix_id, meta_csv_path = asyncio.run(recognizer.detect_songs_in_mix(args.mp3, 60, 15))
+        if not current_mix_id:
+            print("Song detection failed. Exiting.", file=sys.stderr)
+            sys.exit(1)
+        print(f"Song detection successful. Mix ID: {current_mix_id}")
     else:
         print(f"\n--- Step 1: Scraping (Skipped) ---")
         print(f"Using Mix ID: {current_mix_id}")
