@@ -32,6 +32,14 @@ def extract_youtube_id(url):
     return None
 
 def download_audio(search_query, output_path, filename, mix_id):
+    output_dir = os.path.join('../data/mp3', str(mix_id))
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, f"{filename}.mp3")
+    
+    if os.path.exists(output_file):
+        print(f"Info: File already exists at {output_file}. Skipping download.", file=sys.stderr)
+        return True
+    
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -43,14 +51,6 @@ def download_audio(search_query, output_path, filename, mix_id):
         'noplaylist': True,
         'default_search': 'ytsearch',
     }
-
-    output_dir = os.path.join('../data/mp3', str(mix_id))
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, f"{filename}.mp3")
-    
-    if os.path.exists(output_file):
-        print(f"Info: File already exists at {output_file}. Skipping download.", file=sys.stderr)
-        return True
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

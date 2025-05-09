@@ -9,6 +9,7 @@ from pydub import AudioSegment
 import multiprocessing as mp
 from functools import partial
 from feature_extraction import *
+from dtw import *
 
 SR = 22050
 CACHE_DIR = './cache'
@@ -90,7 +91,7 @@ def align_track_to_mix(mix_feature, mix_beats, track_path, features=['chroma', '
             X, Y = track_feature.copy(), mix_feature.copy()
             X[:12] = np.roll(X[:12], pitch_shift, axis=0)
         
-        D, wp = librosa.sequence.dtw(X, Y, subseq=True)
+        D, wp = dtw(X, Y)
         matching_function = D[-1, :] / wp.shape[0]
         cost = matching_function.min()
         costs.append(cost)

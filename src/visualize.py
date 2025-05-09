@@ -7,7 +7,7 @@ import numpy as np
 import librosa
 
 COLORS = ['red', 'blue', 'green', 'purple', 'orange']
-MATCH_RATE_THRESHOLD = 0.8
+MATCH_RATE_THRESHOLD = 0.5
 
 def get_mix_beats(mix_id):
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -74,11 +74,13 @@ def visualize_alignment(mix_id, pkl_path, viz_dir):
             verticalalignment='bottom', horizontalalignment='left'
         )
         if track['match_rate'] > MATCH_RATE_THRESHOLD:
+            print(f'track {i} exceeded threashold')
             box_height = 0.04 * ymax
             plt.gca().add_patch(mpatches.Rectangle(
                 xy=(track['mix_cue_in_beat'], box_height * i), width=track['mix_cue_out_beat'] - track['mix_cue_in_beat'],
                 height=box_height, linewidth=0, facecolor=color, alpha=0.5
             ))
+        print(i, track['match_rate'])
 
     mix_beats = get_mix_beats(mix_id)
     if not gt_df.empty and mix_beats is not None:
