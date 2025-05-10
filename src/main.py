@@ -37,6 +37,9 @@ def main():
 
     if args.html:
         print(f"\n--- Step 1: Scraping ---")
+        if not os.path.exists(args.html):
+            print(f"Tracklist HTML file not found at {args.html}. Exiting.", file=sys.stderr)
+            sys.exit(1)
         current_mix_id, meta_csv_path = tracklist_scraper.run_scraper(args.html, mixes_db_path=args.mixes_db)
         if not current_mix_id:
             print("Scraping failed. Exiting.", file=sys.stderr)

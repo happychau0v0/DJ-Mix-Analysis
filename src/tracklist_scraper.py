@@ -65,20 +65,19 @@ def scrape_tracklist(html_file):
     print(f"Successfully parsed {len(tracks)} tracks")
     return tracks, mix_title, mixId
 
-def run_scraper(html_file_base, output_csv_path=None, mixes_db_path='../data/mixes.csv'):
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    html_full_path = os.path.join(script_dir, '..', 'tracklists', html_file_base + '.html')
+def run_scraper(html_path, output_csv_path=None, mixes_db_path='../data/mixes.csv'):
 
     try:
-        tracks, mix_title, mixId = scrape_tracklist(html_full_path)
+        tracks, mix_title, mixId = scrape_tracklist(html_path)
     except Exception as e:
         print(f"Error during scraping: {e}", file=sys.stderr)
         return None, None
 
     if not tracks or not mixId:
-        print(f"No tracks found or mixId missing for {html_file_base}.", file=sys.stderr)
+        print(f"No tracks found or mixId missing for {html_path}.", file=sys.stderr)
         return None, None
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))
     output_csv_full_path = output_csv_path or os.path.join(script_dir, '..', 'data', 'meta', f"{mixId}.csv")
     save_to_csv(tracks, output_csv_full_path)
     update_mixes_database(mix_title, mixId, mixes_db_path)
