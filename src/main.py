@@ -95,11 +95,11 @@ def main():
             print("No alignment results for visualization. Exiting.", file=sys.stderr)
             sys.exit(1)
         print(f"Generating visualization using {pkl_path}")
-        pdf_path = visualize.run_visualizer(current_mix_id, pkl_path=pkl_path, viz_base_dir=args.viz_dir)
-        if not pdf_path:
+        dtw_path, list_path = visualize.run_visualizer(current_mix_id, pkl_path=pkl_path, viz_base_dir=args.viz_dir)
+        if not dtw_path:
             print("Visualization failed.", file=sys.stderr)
         else:
-            print(f"Visualization successful. PDF: {pdf_path}")
+            print(f"Visualization successful. PDF: {dtw_path}, {list_path}")
     else:
         print(f"\n--- Step 4: Visualization (Skipped) ---")
 

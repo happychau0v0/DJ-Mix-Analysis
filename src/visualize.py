@@ -62,10 +62,14 @@ def visualize_alignment(mix_id, pkl_path, viz_dir, meta_dir):
 
     xmax = max(results_df['mix_cue_out_beat'].max(), results_df['mix_cue_in_beat'].max())
     ymax = max(results_df['track_cue_out_beat'].max(), results_df['track_cue_in_beat'].max())
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(int(xmax / ymax * 2), 6), gridspec_kw={'height_ratios': [2, 2]})
-    cnt = 0
+    
+    # Initialize selected_tracks list
     selected_tracks = []
+    cnt = 0
 
+    # Create DTW figure
+    fig1, ax1 = plt.subplots(figsize=(int(xmax / ymax * 2), 3))
+    
     for i, (_, track) in enumerate(results_df.iterrows()):
         if track['mix_cue_out_time'] - track['mix_cue_in_time'] < 20 or track['match_rate'] < 0.25:
             continue
@@ -94,7 +98,8 @@ def visualize_alignment(mix_id, pkl_path, viz_dir, meta_dir):
         if track['match_rate'] > MATCH_RATE_THRESHOLD:
             box_height = 0.04 * ymax
             ax1.add_patch(mpatches.Rectangle(
-                xy=(track['mix_cue_in_beat'], box_height * cnt), width=track['mix_cue_out_beat'] - track['mix_cue_in_beat'],
+                xy=(track['mix_cue_in_beat'], box_height * cnt), 
+                width=track['mix_cue_out_beat'] - track['mix_cue_in_beat'],
                 height=box_height, linewidth=0, facecolor=color, alpha=0.5
             ))
             i_track = track['i_track']
@@ -137,23 +142,36 @@ def visualize_alignment(mix_id, pkl_path, viz_dir, meta_dir):
     ax1.set_ylabel('Track beat frame')
     ax1.set_xlabel('Mix beat frame')
 
+    fig1.tight_layout()
+    dtw_path = os.path.join(viz_dir, f"{mix_id}-dtw.pdf")
+    fig1.savefig(dtw_path)
+    plt.close(fig1)
+    print(f"Saved DTW visualization to {dtw_path}")
+
+    # Create track list figure
     if selected_tracks:
-        table_data = [[track['i_track'], track['song'], track['mix_cue_in_time'], track['mix_cue_out_time'], track['match_rate']] 
+        fig2, ax2 = plt.subplots(figsize=(int(xmax / ymax * 2), 4))
+        table_data = [[track['i_track'], track['song'], track['mix_cue_in_time'], 
+                       track['mix_cue_out_time'], track['match_rate']] 
                       for track in selected_tracks]
         col_labels = ['Track Index', 'Song', 'Cue In Time', 'Cue Out Time', "Match Rate"]
         col_widths = [0.1, 0.6, 0.1, 0.1, 0.1]
-        table = ax2.table(cellText=table_data, colLabels=col_labels, loc='center', cellLoc='center', colWidths=col_widths)
+        table = ax2.table(cellText=table_data, colLabels=col_labels, loc='center', 
+                         cellLoc='center', colWidths=col_widths)
+        table.auto_set_font_size(False)
+        table.set_fontsize(14)
 
         for i in range(len(table_data)): 
             table[(i + 1, 1)].set_text_props(horizontalalignment='left')
-    ax2.axis('off')
-
-    fig.tight_layout()
-    viz_path = os.path.join(viz_dir, f"{mix_id}.pdf")
-    fig.savefig(viz_path)
-    plt.close(fig)
-    print(f"Saved visualization to {viz_path}")
-    return viz_path
+        
+        ax2.axis('off')
+        fig2.tight_layout()
+        list_path = os.path.join(viz_dir, f"{mix_id}-list.pdf")
+        fig2.savefig(list_path)
+        plt.close(fig2)
+        print(f"Saved track list visualization to {list_path}")
+    
+    return dtw_path, list_path
 
 def run_visualizer(mix_id, pkl_path, viz_base_dir='../data/dtwviz', meta_dir='../data/meta'):
     script_dir = os.path.dirname(os.path.abspath(__file__))

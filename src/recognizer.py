@@ -11,7 +11,7 @@ def generate_mix_id(mix_name: str) -> str:
     encoded = base64.b64encode(mix_name.encode()).decode()
     return encoded[:8]
 
-async def detect_songs_in_mix(mix_path: str, interval_seconds: int = 30, segment_duration: int = 15) -> tuple:
+async def detect_songs_in_mix(mix_path: str, interval_seconds: int = 60, segment_duration: int = 15) -> tuple:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     
