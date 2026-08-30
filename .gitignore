@@ -1,2 +1,34 @@
+# Python environments, caches, and test/tool output
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+
+# Generated pipeline data and copyrighted source material
 data/
-src/__pycache__/
+cache/
+tracklists/
+*.mp3
+*.wav
+*.flac
+*.pkl
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

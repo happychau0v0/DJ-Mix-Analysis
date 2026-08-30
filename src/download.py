@@ -2,7 +2,7 @@ import os
 import sys
 import pandas as pd
 import yt_dlp
-from fuzzywuzzy import fuzz
+from rapidfuzz import fuzz
 from urllib.parse import urlparse
 
 def validate_mix_id(mix_id, mixes_csv):

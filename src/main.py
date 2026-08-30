@@ -11,9 +11,9 @@ import asyncio
 def main():
     parser = argparse.ArgumentParser(description='Run the DJ Mix Analysis pipeline.')
     input_group = parser.add_mutually_exclusive_group(required=True)
-    input_group.add_argument('--html', help='HTML file base name in ../tracklists/ (e.g., "avicii").')
+    input_group.add_argument('--html', help='Path to a saved tracklist HTML file.')
     input_group.add_argument('--mix-id', help='Mix ID to process (skips scraping).')
-    input_group.add_argument('--mp3', help='Path to MP3 file for mix analysis.')
+    input_group.add_argument('--mp3', help='Path to a locally available mix MP3 file.')
     parser.add_argument('--features', default='chroma,mfcc', help='Alignment features (comma-separated).')
     key_inv_group = parser.add_mutually_exclusive_group()
     key_inv_group.add_argument('--key-invariant', action='store_true', default=True, help='Use key-invariant matching.')

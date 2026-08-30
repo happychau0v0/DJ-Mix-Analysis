@@ -1,4 +1,3 @@
-import asyncio
 import os
 import base64
 import shutil
@@ -87,11 +86,3 @@ async def detect_songs_in_mix(mix_path: str, interval_seconds: int = 60, segment
     update_mixes_database(mix_name, mix_id, '../data/mixes.csv')
     
     return mix_id, output_csv_path
-
-if __name__ == "__main__":
-    async def main():
-        mix_id, csv_path = await detect_songs_in_mix("../data/mix/test/johnsummit.mp3", interval_seconds=600, segment_duration=15)
-        print(f"Mix ID: {mix_id}")
-        print(f"Output CSV: {csv_path}")
-    
-    asyncio.run(main())
